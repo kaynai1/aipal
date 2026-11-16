@@ -107,7 +107,7 @@ function createSettings(section) {
     x: area.x + Math.round((area.width - w) / 2),
     y: area.y + Math.round((area.height - h) / 2),
     title: 'AIPal 设置',
-    backgroundColor: '#141018',
+    backgroundColor: '#09090a',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

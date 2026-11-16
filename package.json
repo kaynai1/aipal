@@ -1,8 +1,8 @@
 {
   "name": "aipal",
   "productName": "AIPal",
-  "version": "0.1.3",
-  "description": "AI 游戏搭子：实时语音陪玩 + 看得懂画面 + 记得住你",
+  "version": "0.1.4",
+  "description": "AI 娓告垙鎼瓙锛氬疄鏃惰闊抽櫔鐜?+ 鐪嬪緱鎳傜敾闈?+ 璁板緱浣忎綘",
   "main": "main.js",
   "author": "AIPal",
   "license": "UNLICENSED",
