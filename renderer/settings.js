@@ -366,6 +366,12 @@ $('btnDownload').addEventListener('click', async () => {
   }
 });
 
+$('btnCopyLink').addEventListener('click', () => {
+  const u = (updState.asset && updState.asset.url) || updState.pageUrl || 'https://github.com/kaynai1/aipal/releases/latest';
+  bridge.app.copy(u);
+  tip('下载链接已复制，可以丢给浏览器或下载工具', false);
+});
+
 $('btnReleasePage').addEventListener('click', () => {
   const u = updState.pageUrl || 'https://github.com/kaynai1/aipal/releases/latest';
   bridge.app.openUrl(u);
