@@ -43,6 +43,12 @@ const DEFAULTS = {
     temperature: 0.85,
     maxTokens: 160,
   },
+  // 主接口挂了自动切过去；留空则不启用
+  llmFallback: {
+    baseUrl: '',
+    apiKey: '',
+    model: '',
+  },
   tts: {
     // edge = 微软 Edge 朗读接口（免费、无 Key）；api = 兼容 OpenAI /audio/speech
     provider: 'edge',
@@ -60,6 +66,30 @@ const DEFAULTS = {
   memoryTurns: 12,
   showSubtitle: true,
   clickThrough: false,
+  opacity: 1,
+
+  mic: {
+    deviceId: 'default',
+    consent: false,
+  },
+  // 你说话打断她正在说的话
+  bargeIn: true,
+  // 她说话时把触发阈值抬高，减少被自己的声音触发
+  echoGuard: true,
+
+  // 她主动开口（冷场 / 久坐提醒）
+  proactive: {
+    enabled: false,
+    idleMinutes: 10,
+    breakMinutes: 120,
+  },
+  autoStart: false,
+  // 粗略统计今天发给模型的内容量，用于"上传透明度"
+  stats: {
+    day: '',
+    chars: 0,
+    images: 0,
+  },
 };
 
 let cache = null;

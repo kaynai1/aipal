@@ -41,7 +41,11 @@ contextBridge.exposeInMainWorld('api', {
     snapshot: () => ipcRenderer.invoke('memory:snapshot'),
     forget: () => ipcRenderer.invoke('memory:forget'),
     remember: (note) => ipcRenderer.invoke('memory:remember', note),
+    remove: (index) => ipcRenderer.invoke('memory:remove', index),
   },
+
+  stats: () => ipcRenderer.invoke('stats:get'),
+  demoSpeak: () => ipcRenderer.invoke('demo:speak'),
 
   win: {
     setClickThrough: (on) => ipcRenderer.invoke('win:setClickThrough', on),
@@ -58,6 +62,11 @@ contextBridge.exposeInMainWorld('api', {
     openConfigDir: () => ipcRenderer.invoke('app:openConfigDir'),
     copy: (text) => ipcRenderer.invoke('app:copy', text),
     quit: () => ipcRenderer.invoke('app:quit'),
+    exportConfig: () => ipcRenderer.invoke('app:exportConfig'),
+    importConfig: () => ipcRenderer.invoke('app:importConfig'),
+    exportPersona: () => ipcRenderer.invoke('app:exportPersona'),
+    importPersona: () => ipcRenderer.invoke('app:importPersona'),
+    diagnostic: () => ipcRenderer.invoke('app:diagnostic'),
   },
 
   update: {

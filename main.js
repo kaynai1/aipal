@@ -16,6 +16,7 @@ const {
   nativeImage,
   shell,
   clipboard,
+  dialog,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -29,8 +30,26 @@ const pipeline = require('./main/pipeline');
 const memory = require('./main/memory');
 const game = require('./main/game');
 const updater = require('./main/updater');
+const dbg = require('./main/debug');
 
 const isDev = process.argv.includes('--dev');
+
+/* ---------------- 崩溃与异常兜底 ---------------- */
+// 主进程一崩就是静默消失，先把现场写进日志，再给用户一句话
+process.on('uncaughtException', (err) => {
+  dbg.always('[uncaughtException]', err);
+  try {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('turn:event', {
+        type: 'error',
+        data: { message: `程序内部出错：${err.message}（详情在配置文件夹的 debug.log）` },
+      });
+    }
+  } catch {}
+});
+process.on('unhandledRejection', (err) => {
+  dbg.always('[unhandledRejection]', err);
+});
 
 let win = null;
 let settingsWin = null;
@@ -85,6 +104,10 @@ function createWindow() {
   win.on('closed', () => {
     win = null;
   });
+
+  // 窗口收起时把前台窗口轮询降频，省电
+  win.on('hide', () => game.setInterval(10000));
+  win.on('show', () => game.setInterval(3000));
 }
 
 function createSettings(section) {
@@ -195,6 +218,85 @@ function applyClickThrough(on) {
   win.setIgnoreMouseEvents(!!on, { forward: true });
 }
 
+function applyOpacity(v) {
+  if (!win || win.isDestroyed()) return;
+  const n = Number(v);
+  win.setOpacity(Number.isFinite(n) ? Math.min(1, Math.max(0.45, n)) : 1);
+}
+
+function applyAutoStart(on) {
+  try {
+    // 开发模式不写入开机项，避免每次开机弹一堆 electron
+    if (!/^AIPal\.exe$/i.test(path.basename(app.getPath('exe')))) return;
+    app.setLoginItemSettings({ openAtLogin: !!on, openAsHidden: true });
+  } catch (err) {
+    dbg.always('setLoginItemSettings failed', err);
+  }
+}
+
+/* ---------------- 主动开口 ---------------- */
+let proactiveTimer = null;
+let lastTalkAt = Date.now();
+let lastBreakAt = Date.now();
+
+function touchTalk() {
+  lastTalkAt = Date.now();
+}
+
+function scheduleProactive() {
+  if (proactiveTimer) {
+    clearInterval(proactiveTimer);
+    proactiveTimer = null;
+  }
+  const p = config.get().proactive || {};
+  if (!p.enabled) return;
+  const idleMs = Math.max(2, Number(p.idleMinutes) || 10) * 60000;
+  const breakMs = Math.max(20, Number(p.breakMinutes) || 120) * 60000;
+
+  proactiveTimer = setInterval(async () => {
+    if (!win || win.isDestroyed()) return;
+    const cfg = config.get();
+    if (!cfg.proactive || !cfg.proactive.enabled) return;
+    const g = game.get();
+    const now = Date.now();
+
+    // 久坐提醒优先，且一天最多提醒几次由间隔天然限制
+    const needBreak = now - lastBreakAt > breakMs && g.game;
+    const needTalk = now - lastTalkAt > idleMs && g.game;
+    if (!needBreak && !needTalk) return;
+
+    // 正在说话/思考时不插嘴
+    if (pipeline.isBusy && pipeline.isBusy()) return;
+
+    if (needBreak && g.game) {
+      lastBreakAt = now;
+      lastTalkAt = now;
+      runProactive('提醒他玩太久了，让他起来活动一下、喝口水。只说一句，不要唠叨。');
+      return;
+    }
+    lastTalkAt = now;
+    runProactive('他很久没说话了。主动搭一句，吐槽一下场面或者随便聊两句。');
+  }, 60000);
+}
+
+async function runProactive(hint) {
+  try {
+    await pipeline.run({
+      text: hint,
+      silent: true,
+      withVision: !!config.get().vision,
+      game: game.get().game,
+      fullscreen: game.get().fullscreen,
+      onEvent: (type, data) => {
+        if (type === 'audio') send('turn:audio', { seq: data.seq, text: data.text, buffer: data.buffer });
+        else send('turn:event', { type, data });
+      },
+    });
+  } catch (err) {
+    dbg.always('proactive failed', err);
+  }
+}
+
 /* ---------------- IPC ---------------- */
 
 ipcMain.handle('app:init', () => ({
@@ -214,6 +316,9 @@ ipcMain.handle('config:save', (_e, patch) => {
   if (patch && patch.hotkey !== undefined) registerHotkey();
   if (patch && patch.clickThrough !== undefined) applyClickThrough(cfg.clickThrough);
   if (patch && patch.tts && patch.tts.voice) tts.edge.reset();
+  if (patch && patch.autoStart !== undefined) applyAutoStart(!!cfg.autoStart);
+  if (patch && patch.opacity !== undefined) applyOpacity(cfg.opacity);
+  if (patch && patch.proactive !== undefined) scheduleProactive();
   send('config', config.masked());
   return config.masked();
 });
@@ -245,6 +350,7 @@ ipcMain.handle('voice:list', async () => [
 
 ipcMain.handle('turn:start', async (_e, payload) => {
   const audio = payload && payload.audio ? Buffer.from(payload.audio) : null;
+  touchTalk();
   try {
     const r = await pipeline.run({
       wavBuffer: audio,
@@ -288,6 +394,10 @@ ipcMain.handle('memory:forget', () => {
 });
 ipcMain.handle('memory:remember', (_e, note) => {
   memory.remember(note);
+  return memory.snapshot();
+});
+ipcMain.handle('memory:remove', (_e, index) => {
+  memory.removeNote(index);
   return memory.snapshot();
 });
 
@@ -375,6 +485,153 @@ ipcMain.handle('app:quit', () => {
   return true;
 });
 
+/* ---------------- 备份、导入、诊断 ---------------- */
+
+ipcMain.handle('app:exportConfig', async () => {
+  const { canceled, filePath } = await dialog.showSaveDialog(settingsWin || win, {
+    title: '导出配置（含 Key，请自己保管好）',
+    defaultPath: 'aipal-config.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return { ok: false };
+  try {
+    fs.copyFileSync(config.file(), filePath);
+    return { ok: true, path: filePath };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('app:importConfig', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(settingsWin || win, {
+    title: '选择要导入的配置',
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePaths || !filePaths[0]) return { ok: false };
+  try {
+    const raw = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+    config.save(raw);
+    registerHotkey();
+    applyClickThrough(config.get().clickThrough);
+    tts.edge.reset();
+    send('config', config.masked());
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('app:exportPersona', async () => {
+  const { canceled, filePath } = await dialog.showSaveDialog(settingsWin || win, {
+    title: '导出角色卡',
+    defaultPath: 'aipal-persona.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return { ok: false };
+  try {
+    const p = config.get().persona || {};
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({ _type: 'aipal-persona', _version: 1, persona: p }, null, 2),
+      'utf8'
+    );
+    return { ok: true, path: filePath };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('app:importPersona', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(settingsWin || win, {
+    title: '选择角色卡',
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePaths || !filePaths[0]) return { ok: false };
+  try {
+    const raw = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+    const p = raw && raw.persona ? raw.persona : raw;
+    if (!p || typeof p !== 'object') throw new Error('文件里没有角色卡内容');
+    config.save({ persona: p });
+    send('config', config.masked());
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('app:diagnostic', async () => {
+  const { canceled, filePath } = await dialog.showSaveDialog(settingsWin || win, {
+    title: '导出诊断信息',
+    defaultPath: 'aipal-diagnostic.txt',
+    filters: [{ name: '文本', extensions: ['txt'] }],
+  });
+  if (canceled || !filePath) return { ok: false };
+  try {
+    const c = config.masked();
+    let logTail = '';
+    try {
+      const p = path.join(app.getPath('userData'), 'debug.log');
+      const buf = fs.readFileSync(p);
+      logTail = buf.slice(Math.max(0, buf.length - 200 * 1024)).toString('utf8');
+    } catch {}
+    const lines = [
+      'AIPal 诊断信息',
+      '==============',
+      `版本: ${app.getVersion()}`,
+      `时间: ${new Date().toISOString()}`,
+      `系统: ${process.platform} ${process.arch} ${require('os').release()}`,
+      `运行方式: ${/^AIPal\.exe$/i.test(path.basename(app.getPath('exe'))) ? '便携版' : '开发模式'}`,
+      `配置文件夹: ${app.getPath('userData')}`,
+      `热键注册: ${hotkeyOk ? '正常' : '失败'}`,
+      '',
+      '--- 配置（密钥已打码）---',
+      JSON.stringify(c, null, 2),
+      '',
+      '--- 日志尾部 ---',
+      logTail || '（没有日志；设置环境变量 AIPAL_DEBUG=1 后再复现一次）',
+    ];
+    fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+    return { ok: true, path: filePath };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+/* 演示：不需要大模型，直接用免费语音说一句，让第一次打开的人先听到声音 */
+const DEMO_LINES = [
+  '我叫小满，是你的游戏搭子。你填好模型接口之后，我就能陪你说话了。',
+  '现在我还听不见你。去设置里把大脑填上，回来敲一下热键就行。',
+  '别紧张，我又不会抢你人头。先吧配置弄好，咱们再开局。',
+];
+let demoIdx = 0;
+ipcMain.handle('demo:speak', async () => {
+  try {
+    const text = DEMO_LINES[demoIdx++ % DEMO_LINES.length];
+    const buf = await tts.speak(text);
+    if (!buf || buf.length < 100) throw new Error('语音合成没有返回内容');
+    send('turn:audio', { seq: 0, text, buffer: buf });
+    send('turn:event', { type: 'reply', data: { text } });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('stats:get', () => {
+  const st = config.get().stats || {};
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    day: st.day || '',
+    today: st.day === today,
+    chars: st.day === today ? st.chars || 0 : 0,
+    images: st.day === today ? st.images || 0 : 0,
+    notes: memory.snapshot().notes.length,
+    playMinutes: memory.playMinutes(),
+  };
+});
+
 /* ---------------- 生命周期 ---------------- */
 
 const gotLock = app.requestSingleInstanceLock();
@@ -390,11 +647,16 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     app.setAppUserModelId('com.aipal.app');
+    const cfg0 = config.get();
     createWindow();
     buildTray();
     registerHotkey();
     game.start();
     game.on('change', (g) => send('game', g));
+
+    applyAutoStart(!!cfg0.autoStart);
+    applyOpacity(cfg0.opacity);
+    scheduleProactive();
 
     // 预热语音合成连接：第一次说话就不用干等握手（预热失败不影响使用）
     tts.edge.warmup().catch(() => {});
@@ -418,6 +680,7 @@ if (!gotLock) {
     game.stop();
     asr.sapi.stop();
     tts.edge.reset();
+    if (proactiveTimer) clearInterval(proactiveTimer);
   });
 
   app.on('window-all-closed', (e) => {

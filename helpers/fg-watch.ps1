@@ -1,5 +1,6 @@
-# 前台窗口监视：常驻进程，每 3 秒输出一行 JSON
+# 前台窗口监视：常驻进程，默认每 3 秒输出一行 JSON
 # 输出：{"proc":"game.exe","title":"窗口标题","pid":1234,"fullscreen":false}
+param([int]$Interval = 3000)
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -41,5 +42,5 @@ while ($true) {
     }
   } catch {}
   [Console]::Out.WriteLine($out)
-  Start-Sleep -Milliseconds 3000
+  Start-Sleep -Milliseconds $Interval
 }

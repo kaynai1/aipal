@@ -163,6 +163,31 @@
         </div>
         <div class="model-box" id="modelBox" hidden></div>
 
+        <div class="preset-row">
+          <span class="preset-label">常见服务</span>
+          <button class="chip-btn" data-base="https://api.siliconflow.cn/v1" data-model="Qwen/Qwen2.5-7B-Instruct">硅基流动</button>
+          <button class="chip-btn" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">DeepSeek</button>
+          <button class="chip-btn" data-base="https://ark.cn-beijing.volces.com/api/v3" data-model="">火山方舟</button>
+          <button class="chip-btn" data-base="http://localhost:11434/v1" data-model="qwen2.5:7b">本机 Ollama</button>
+        </div>
+
+        <h3 class="sub">备用接口</h3>
+        <p class="lead">主接口挂了自动切到这里。不填就不启用。</p>
+        <div class="group">
+          <div class="field">
+            <label for="fbBase">接口地址</label>
+            <input id="fbBase" placeholder="https://api.deepseek.com/v1" />
+          </div>
+          <div class="field">
+            <label for="fbKey">API Key</label>
+            <input id="fbKey" type="password" placeholder="sk-..." />
+          </div>
+          <div class="field">
+            <label for="fbModel">模型名</label>
+            <input id="fbModel" placeholder="deepseek-chat" />
+          </div>
+        </div>
+
         <p class="note">
           想看画面就得选<b>支持图片</b>的模型（硅基流动的 Qwen2.5-VL、Qwen2-VL 等）。纯文本模型也能聊，但"看屏幕"会失败。
         </p>
@@ -173,6 +198,13 @@
         <p class="lead">默认用 Windows 自带的中文引擎，不用联网、不用 Key。</p>
 
         <div class="group">
+          <div class="field">
+            <label for="micDevice">麦克风</label>
+            <select id="micDevice">
+              <option value="default">系统默认</option>
+            </select>
+            <em>换耳机或外置麦后听不到你，在这里选一下</em>
+          </div>
           <div class="field">
             <label for="asrProv">识别方式</label>
             <select id="asrProv">
@@ -300,6 +332,41 @@
             <span>鼠标穿透<em>点窗口不再挡住游戏，只能靠热键操作</em></span>
             <input type="checkbox" id="clickThrough" />
           </label>
+          <label class="switch-row" for="showSubtitle">
+            <span>字幕常显<em>她说的话留在窗口里，静音也能看</em></span>
+            <input type="checkbox" id="showSubtitle" />
+          </label>
+          <label class="switch-row" for="bargeIn">
+            <span>说话可以打断她<em>她还在说时你开口，她会停下来听你</em></span>
+            <input type="checkbox" id="bargeIn" />
+          </label>
+          <label class="switch-row" for="echoGuard">
+            <span>回声抑制<em>她出声时提高触发阈值，减少自己的声音把自己叫醒</em></span>
+            <input type="checkbox" id="echoGuard" />
+          </label>
+          <label class="switch-row" for="autoStart">
+            <span>开机自动启动<em>只在安装版/便携版生效</em></span>
+            <input type="checkbox" id="autoStart" />
+          </label>
+          <label class="switch-row" for="proactiveOn">
+            <span>主动开口<em>冷场时她会跟你搭一句，玩久了提醒你歇会儿</em></span>
+            <input type="checkbox" id="proactiveOn" />
+          </label>
+          <div class="field">
+            <label for="proactiveIdle">冷场多久开口</label>
+            <input id="proactiveIdle" class="short" type="number" min="2" max="120" />
+            <em>分钟。在这期间的对话会重置计时</em>
+          </div>
+          <div class="field">
+            <label for="proactiveBreak">久坐提醒间隔</label>
+            <input id="proactiveBreak" class="short" type="number" min="20" max="480" />
+            <em>分钟。在游戏里连着玩这么久就会提醒一次</em>
+          </div>
+          <div class="field">
+            <label for="opacity">窗口透明度</label>
+            <input id="opacity" type="range" min="45" max="100" step="5" />
+            <em>100 为完全不透明，调低更不抢眼</em>
+          </div>
           <div class="field">
             <label for="memoryTurns">带多少轮上下文</label>
             <input id="memoryTurns" class="short" type="number" min="2" max="40" />
@@ -310,6 +377,17 @@
         <p class="note">
           游戏开了全屏独占时，Windows 会挡住所有悬浮窗。把游戏改成「窗口化无边框」，她就一直待在你屏幕角落。
         </p>
+
+        <h3 class="sub">备份与诊断</h3>
+        <p class="lead">换电脑或者出问题的时候用。配置里含 Key，导出的文件自己收好。</p>
+        <div class="btn-grid">
+          <button class="btn" id="btnExportCfg">导出配置</button>
+          <button class="btn" id="btnImportCfg">导入配置</button>
+          <button class="btn" id="btnExportPersona">导出角色卡</button>
+          <button class="btn" id="btnImportPersona">导入角色卡</button>
+          <button class="btn" id="btnDiagnostic">导出诊断</button>
+        </div>
+        <p class="note" id="uploadStat">今天还没和模型服务通信</p>
       </section>
 
       <section class="sec" data-sec="memory">

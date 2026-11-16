@@ -67,6 +67,24 @@ function forgetAll() {
   persist();
 }
 
+/** 删掉一条笔记；index 从 0 开始。返回剩下的笔记 */
+function removeNote(index) {
+  const d = load();
+  const i = Number(index);
+  if (Number.isInteger(i) && i >= 0 && i < d.profile.notes.length) {
+    d.profile.notes.splice(i, 1);
+    persist();
+  }
+  return d.profile.notes.slice();
+}
+
+/** 把当前游戏累计时长读出来（分钟） */
+function playMinutes() {
+  const d = load();
+  const total = Object.values(d.plays).reduce((a, b) => a + (b || 0), 0);
+  return Math.round(total / 60000);
+}
+
 function addPlay(game, ms) {
   if (!game) return;
   const d = load();
@@ -93,4 +111,4 @@ function snapshot() {
   };
 }
 
-module.exports = { addTurn, recent, remember, forgetAll, addPlay, topGames, snapshot };
+module.exports = { addTurn, recent, remember, forgetAll, removeNote, addPlay, topGames, playMinutes, snapshot };

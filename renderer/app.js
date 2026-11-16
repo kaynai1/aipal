@@ -159,14 +159,17 @@ async function ensureAudio() {
     if (S.ctx.state === 'suspended') await S.ctx.resume();
     return;
   }
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      channelCount: 1,
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    },
-  });
+  const device = (S.cfg && S.cfg.mic && S.cfg.mic.deviceId) || 'default';
+  const audio = {
+    channelCount: 1,
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  };
+  if (device && device !== 'default') {
+    audio.deviceId = { exact: device };
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio });
   const ctx = new AudioContext();
   await ctx.audioWorklet.addModule('pcm-worklet.js');
   const src = ctx.createMediaStreamSource(stream);
@@ -199,16 +202,39 @@ function onFrame(f) {
     return;
   }
 
-  if (!S.auto || S.busy || S.muted || S.play.playing) {
-    if (S.auto && (S.busy || S.play.playing)) S.vad.speaking = false;
-    if (S.play.playing) driveWave(Math.random() * 0.55 + 0.2);
+  const cfg = S.cfg || {};
+  const playing = S.play.playing || S.status === 'speaking';
+
+  if (!S.auto || S.muted) {
+    if (playing) driveWave(Math.random() * 0.55 + 0.2);
     return;
   }
 
   const v = S.vad;
-  const thr = Math.min(0.05, Math.max(0.008, v.noise * 3.2));
+  const baseThr = Math.min(0.05, Math.max(0.008, v.noise * 3.2));
+  // 回声抑制：她正在出声时把阈值抬高，避免扬声器回流把自己触发
+  const thr = playing && cfg.echoGuard !== false ? Math.max(baseThr * 3, 0.035) : baseThr;
 
-  if (rms > thr) {
+  // 她说活或思考中：允许打断
+  if (S.busy || playing) {
+    if (cfg.bargeIn === false) {
+      v.loud = 0;
+      v.quiet = 0;
+      return;
+    }
+    if (rms > thr) {
+      v.loud++;
+      if (v.loud >= (playing ? 8 : 5)) {
+        v.loud = 0;
+        interruptAndListen();
+      }
+    } else {
+      v.loud = 0;
+    }
+    return;
+  }
+
+  if (rms > baseThr) {
     v.loud++;
     v.quiet = 0;
     if (!v.speaking && v.loud >= 4) {
@@ -233,6 +259,18 @@ function onFrame(f) {
     S.lastLevelAt = now;
     driveWave(v.speaking ? Math.min(1, rms * 9) : Math.min(0.5, rms * 14));
   }
+}
+
+/** 她还在说话/思考时你插嘴：停掉声音、取消这一轮，立刻开始听 */
+function interruptAndListen() {
+  stopPlayback();
+  bridge.turn.abort();
+  S.busy = false;
+  S.vad.speaking = false;
+  S.vad.quiet = 0;
+  setHint('打断了她，接着说');
+  startCapture();
+  setStatus('listening');
 }
 
 function startCapture() {
@@ -434,8 +472,14 @@ function stopPlayback() {
 
 async function toggleRecord() {
   if (!ready()) {
-    setHint('先在设置里填模型接口和 Key', 'warn');
-    bridge.win.openSettings('brain');
+    // 演示模式：没配模型也能先听一句，别让第一次打开就是个空壳
+    setHint('还没填模型，先让她说一句给你听');
+    try {
+      await bridge.demoSpeak();
+    } catch (err) {
+      setHint(`演示也失败了：${err.message}`, 'bad');
+    }
+    refreshMic();
     return;
   }
   if (S.rec) {
@@ -472,17 +516,32 @@ function bind() {
   $('chipAuto').addEventListener('click', async () => {
     S.auto = !S.auto;
     $('chipAuto').classList.toggle('on', S.auto);
-    await bridge.config.save({ trigger: S.auto ? 'both' : 'hotkey' });
     if (S.auto) {
+      // 首次开启给一次明确告知：麦克风会一直开着
+      const c = S.cfg && S.cfg.mic;
+      if (!c || !c.consent) {
+        const ok = window.confirm(
+          '开启自动听之后，AIPal 会一直用麦克风听你说话，并把听到的内容送到你配置的模型服务。\n\n声音不会存到硬盘。确定开启吗？'
+        );
+        if (!ok) {
+          S.auto = false;
+          $('chipAuto').classList.remove('on');
+          setHint('没开自动听，还是用热键说话');
+          return;
+        }
+        await bridge.config.save({ mic: { consent: true } });
+      }
       try {
         await ensureAudio();
       } catch (err) {
         S.auto = false;
         $('chipAuto').classList.remove('on');
         setHint(`麦克风打不开：${err.message}`, 'bad');
+        return;
       }
     }
-    setHint(S.auto ? '自动听已开：直接说话就行' : '自动听已关，用热键说话');
+    await bridge.config.save({ trigger: S.auto ? 'both' : 'hotkey' });
+    setHint(S.auto ? '自动听已开：直接说话就行，她说话时你也能插嘴' : '自动听已关，用热键说话');
   });
 
   bridge.on.hotkey(() => toggleRecord());
@@ -505,7 +564,12 @@ function bind() {
     } else if (type === 'reply') {
       const b = $('aiBubble');
       b.classList.remove('caret');
-      if (data.text) b.textContent = data.text;
+      const c = S.cfg || {};
+      if (c.showSubtitle === false) {
+        b.textContent = '';
+      } else if (data.text) {
+        b.textContent = data.text;
+      }
       scrollTalk();
     } else if (type === 'first-audio') {
       setHint(`从说完到出声 ${(data.ms / 1000).toFixed(1)} 秒`);

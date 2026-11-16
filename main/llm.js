@@ -56,9 +56,38 @@ function ensure() {
 
 /**
  * 流式对话。onDelta(text) 边生成边回调；返回完整文本。
+ * 主接口失败且配置了备用接口时，自动用备用接口重试一次（只在还没吐出任何字时）。
  */
 async function chatStream(messages, opts = {}) {
   const o = ensure();
+  try {
+    return await streamOnce(o, messages, opts);
+  } catch (err) {
+    const fb = fallbackOptions();
+    if (!fb || /没有填写|还没有填写/.test(String(err.message))) throw err;
+    if (opts.__triedFallback) throw err;
+    if (opts.__spoke) throw err; // 已经吐过字就不重试，避免重复播报
+    const note = typeof opts.onFallback === 'function' ? opts.onFallback : null;
+    if (note) note(err);
+    return await streamOnce(fb, messages, { ...opts, __triedFallback: true });
+  }
+}
+
+function fallbackOptions() {
+  const c = config.get().llmFallback || {};
+  const base = String(c.baseUrl || '').trim().replace(/\/+$/, '');
+  const model = String(c.model || '').trim();
+  if (!base || !model) return null;
+  return {
+    base,
+    key: String(c.apiKey || '').trim(),
+    model,
+    temperature: 0.85,
+    maxTokens: 160,
+  };
+}
+
+async function streamOnce(o, messages, opts = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs || 60000);
 
@@ -118,6 +147,7 @@ async function chatStream(messages, opts = {}) {
           (json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content) || '';
         if (delta) {
           full += delta;
+          opts.__spoke = true;
           if (opts.onDelta) opts.onDelta(delta);
         }
       }

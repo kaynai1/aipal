@@ -24,13 +24,15 @@ class GameWatcher extends EventEmitter {
     this.proc = null;
     this.current = { proc: '', title: '', game: '', fullscreen: false, at: 0 };
     this.timer = null;
+    this.interval = 3000;
   }
 
-  start() {
+  start(intervalMs) {
+    if (intervalMs) this.interval = intervalMs;
     if (this.proc) return;
     const ps = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
     try {
-      this.proc = spawn(ps, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', HELPER], {
+      this.proc = spawn(ps, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', HELPER, '-Interval', String(this.interval)], {
         windowsHide: true,
         stdio: ['ignore', 'pipe', 'ignore'],
       });
@@ -58,10 +60,29 @@ class GameWatcher extends EventEmitter {
     });
     this.proc.on('exit', () => {
       this.proc = null;
+      if (this.skipAutoRestart) {
+        this.skipAutoRestart = false;
+        return;
+      }
       // 5 秒后自动重启，避免一次性故障导致彻底失联
       if (this.timer) clearTimeout(this.timer);
       this.timer = setTimeout(() => this.start(), 5000);
     });
+  }
+
+  /** 空闲时降频（窗口收起），回到前台再恢复 */
+  setInterval(ms) {
+    const next = Math.max(2000, Math.min(15000, Number(ms) || 3000));
+    if (next === this.interval) return;
+    this.interval = next;
+    if (!this.proc) return;
+    this.skipAutoRestart = true;
+    try {
+      this.proc.kill();
+    } catch {}
+    this.proc = null;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.start(), 400);
   }
 
   _apply(json) {

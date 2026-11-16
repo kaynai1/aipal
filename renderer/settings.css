@@ -832,3 +832,119 @@ input[type='checkbox']:focus-visible {
 .saveTip.bad {
   color: var(--bad);
 }
+/* ---------------- 新增：小标题、预设、网格按钮、滑块 ---------------- */
+h3.sub {
+  margin: 26px 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  color: var(--t1);
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0 0;
+}
+.preset-label {
+  font-size: 11.5px;
+  color: var(--t3);
+  margin-right: 2px;
+}
+.chip-btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--t2);
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 130ms var(--ease),
+    border-color 130ms var(--ease),
+    color 130ms var(--ease);
+}
+.chip-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--line-strong);
+  color: var(--t1);
+}
+.chip-btn:active {
+  transform: scale(0.985);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.btn-grid .btn {
+  justify-content: center;
+}
+
+input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 180px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--raise);
+}
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #e8e7ee;
+  border: none;
+  cursor: pointer;
+}
+input[type='range']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.mem-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.mem-item span {
+  flex: 1;
+  min-width: 0;
+}
+.mem-del {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--t3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 130ms var(--ease),
+    color 130ms var(--ease);
+}
+.mem-del:hover {
+  background: rgba(217, 138, 133, 0.12);
+  color: var(--bad);
+}

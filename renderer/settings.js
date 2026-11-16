@@ -62,7 +62,58 @@ async function load() {
   $('clickThrough').checked = !!cfg.clickThrough;
   $('memoryTurns').value = cfg.memoryTurns ?? 12;
 
+  // 新增项
+  const fb = cfg.llmFallback || {};
+  $('fbBase').value = fb.baseUrl || '';
+  $('fbModel').value = fb.model || '';
+  $('fbKey').placeholder = fb.apiKey ? '已保存过 Key，这里留空就不改' : 'sk-...';
+
+  $('showSubtitle').checked = cfg.showSubtitle !== false;
+  $('bargeIn').checked = cfg.bargeIn !== false;
+  $('echoGuard').checked = cfg.echoGuard !== false;
+  $('autoStart').checked = !!cfg.autoStart;
+  const pr = cfg.proactive || {};
+  $('proactiveOn').checked = !!pr.enabled;
+  $('proactiveIdle').value = pr.idleMinutes ?? 10;
+  $('proactiveBreak').value = pr.breakMinutes ?? 120;
+  $('opacity').value = Math.round((cfg.opacity ?? 1) * 100);
+
+  await loadMics();
+  refreshStats();
+
   toggleBoxes();
+}
+
+async function loadMics() {
+  const sel = $('micDevice');
+  if (!sel) return;
+  const cur = (cfg.mic && cfg.mic.deviceId) || 'default';
+  try {
+    const list = await navigator.mediaDevices.enumerateDevices();
+    const ins = list.filter((d) => d.kind === 'audioinput');
+    sel.innerHTML = '<option value="default">系统默认</option>';
+    let n = 0;
+    for (const d of ins) {
+      n++;
+      const o = document.createElement('option');
+      o.value = d.deviceId;
+      o.textContent = d.label || `麦克风 ${n}`;
+      sel.appendChild(o);
+    }
+    sel.value = cur;
+    if (sel.value !== cur) sel.value = 'default';
+  } catch {}
+}
+
+async function refreshStats() {
+  try {
+    const s = await bridge.stats();
+    const el = $('uploadStat');
+    if (!el) return;
+    el.textContent = s.today
+      ? `今天发给模型服务：${s.chars} 字、${s.images} 张截图。她记得 ${s.notes} 条关于你的事，累计陪你 ${s.playMinutes} 分钟`
+      : `今天还没和模型服务通信。她记得 ${s.notes} 条关于你的事，累计陪你 ${s.playMinutes} 分钟`;
+  } catch {}
 }
 
 function setKeyHint(id, hasKey) {
@@ -111,11 +162,27 @@ function collect() {
     vision: $('vision').checked,
     clickThrough: $('clickThrough').checked,
     memoryTurns: Math.max(2, Math.min(40, Number($('memoryTurns').value) || 12)),
+    showSubtitle: $('showSubtitle').checked,
+    bargeIn: $('bargeIn').checked,
+    echoGuard: $('echoGuard').checked,
+    autoStart: $('autoStart').checked,
+    opacity: Math.max(45, Math.min(100, Number($('opacity').value) || 100)) / 100,
+    mic: { deviceId: $('micDevice').value || 'default' },
+    proactive: {
+      enabled: $('proactiveOn').checked,
+      idleMinutes: Math.max(2, Math.min(120, Number($('proactiveIdle').value) || 10)),
+      breakMinutes: Math.max(20, Math.min(480, Number($('proactiveBreak').value) || 120)),
+    },
+    llmFallback: {
+      baseUrl: $('fbBase').value.trim(),
+      model: $('fbModel').value.trim(),
+    },
   };
   // 密钥：留空表示不修改
   if ($('llmKey').value.trim()) patch.llm.apiKey = $('llmKey').value.trim();
   if ($('asrKey').value.trim()) patch.asr.apiKey = $('asrKey').value.trim();
   if ($('ttsKey').value.trim()) patch.tts.apiKey = $('ttsKey').value.trim();
+  if ($('fbKey').value.trim()) patch.llmFallback.apiKey = $('fbKey').value.trim();
   return patch;
 }
 
@@ -125,9 +192,11 @@ $('btnSave').addEventListener('click', async () => {
     $('llmKey').value = '';
     $('asrKey').value = '';
     $('ttsKey').value = '';
+    $('fbKey').value = '';
     setKeyHint('llmKeyHint', cfg.llm.hasKey);
     setKeyHint('asrKeyHint', cfg.asr.hasKey);
     setKeyHint('ttsKeyHint', cfg.tts.hasKey);
+    $('fbKey').placeholder = cfg.llmFallback && cfg.llmFallback.apiKey ? '已保存过 Key，这里留空就不改' : 'sk-...';
     tip('已保存，立刻生效', false);
   } catch (err) {
     tip(`保存失败：${err.message}`, true);
@@ -249,10 +318,22 @@ async function loadMemory() {
     list.appendChild(d);
     return;
   }
-  for (const n of snap.notes) {
+  for (let i = 0; i < snap.notes.length; i++) {
+    const n = snap.notes[i];
     const d = document.createElement('div');
     d.className = 'mem-item';
-    d.textContent = n;
+    const s = document.createElement('span');
+    s.textContent = n;
+    const del = document.createElement('button');
+    del.className = 'mem-del';
+    del.textContent = '×';
+    del.title = '删掉这条';
+    del.addEventListener('click', async () => {
+      await bridge.memory.remove(i);
+      loadMemory();
+    });
+    d.appendChild(s);
+    d.appendChild(del);
     list.appendChild(d);
   }
 }
@@ -399,6 +480,42 @@ bridge.on.goto((name) => goSection(name));
 /* ---------------- 实时同步 ---------------- */
 bridge.on.config((c) => {
   cfg = c;
+});
+
+/* ---------------- 模型预设 ---------------- */
+document.querySelectorAll('.chip-btn').forEach((b) => {
+  b.addEventListener('click', () => {
+    $('llmBase').value = b.dataset.base || '';
+    if (b.dataset.model) $('llmModel').value = b.dataset.model;
+    tip('已填入地址和默认模型，补上 Key 再点保存', false);
+  });
+});
+
+/* ---------------- 备份与诊断 ---------------- */
+async function runAction(fn, okText) {
+  try {
+    const r = await fn();
+    if (r && r.ok) tip(okText, false);
+    else if (r && r.error) tip(r.error, true);
+  } catch (err) {
+    tip(err.message, true);
+  }
+}
+
+$('btnExportCfg').addEventListener('click', () => runAction(() => bridge.app.exportConfig(), '配置已导出，记得自己收好'));
+$('btnImportCfg').addEventListener('click', async () => {
+  await runAction(() => bridge.app.importConfig(), '配置已导入并生效');
+  await load();
+});
+$('btnExportPersona').addEventListener('click', () => runAction(() => bridge.app.exportPersona(), '角色卡已导出'));
+$('btnImportPersona').addEventListener('click', async () => {
+  await runAction(() => bridge.app.importPersona(), '角色卡已导入');
+  await load();
+});
+$('btnDiagnostic').addEventListener('click', () => runAction(() => bridge.app.diagnostic(), '诊断文件已导出'));
+
+$('opacity').addEventListener('change', () => {
+  bridge.config.save({ opacity: Math.max(45, Math.min(100, Number($('opacity').value) || 100)) / 100 });
 });
 
 /* ---------------- 自绘标题栏 ---------------- */

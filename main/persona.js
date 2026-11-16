@@ -54,6 +54,18 @@ function buildSystem(cfg, ctx = {}) {
     );
   }
 
+  if (ctx.proactive) {
+    lines.push(
+      '这一次是你主动开口，不是他问你。只说一句短话：可以吐槽场面、提醒他喝水歇一会儿、或者随便搭一嘴。' +
+        '不要问“需要我帮忙吗”这类客套话，也不要重复上一次说过的话。'
+    );
+  }
+
+  const minutes = ctx.playMinutes || 0;
+  if (minutes >= 60) {
+    lines.push(`他今天已经玩了大约 ${minutes} 分钟。如果聊到时间，可以顺口劝他歇一会儿，但不要说教。`);
+  }
+
   lines.push('回复控制在两句话以内，除非他明确要你多说。像朋友插话，不要每次都反问。');
   return lines.join('\n');
 }

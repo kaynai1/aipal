@@ -81,10 +81,15 @@ class SpeechQueue {
 
 let activeId = 0;
 let aborted = false;
+let running = false;
 
 function abort() {
   aborted = true;
   activeId++;
+}
+
+function isBusy() {
+  return running;
 }
 
 /**
@@ -99,12 +104,22 @@ async function run(input = {}) {
   const { onEvent = () => {} } = input;
   const myId = ++activeId;
   aborted = false;
+  running = true;
   const isAborted = () => aborted || myId !== activeId;
+  try {
+    return await runTurn(input, myId, isAborted, onEvent);
+  } finally {
+    if (myId === activeId) running = false;
+  }
+}
+
+async function runTurn(input, myId, isAborted, onEvent) {
 
   const cfg = config.get();
   const game = input.game || '';
   const fullscreen = !!input.fullscreen;
-  dbg('run start', { text: String(input.text || '').slice(0, 30), withVision: !!input.withVision });
+  const silent = !!input.silent; // 主动开口：不是用户说的话，不上屏、不记为用户发言
+  dbg('run start', { text: String(input.text || '').slice(0, 30), withVision: !!input.withVision, silent });
 
   // 1. 识别
   let transcript = '';
@@ -126,7 +141,7 @@ async function run(input = {}) {
     return { text: '', transcript: '' };
   }
 
-  memory.addTurn('user', transcript, game ? { game } : {});
+  if (!silent) memory.addTurn('user', transcript, game ? { game } : {});
 
   // 2. 组装消息（可选附图）
   onEvent('state', { state: 'thinking' });
@@ -139,7 +154,13 @@ async function run(input = {}) {
     }
   }
 
-  const messages = persona.buildMessages(cfg, { game, fullscreen, hasImage: !!dataUrl });
+  const messages = persona.buildMessages(cfg, {
+    game,
+    fullscreen,
+    hasImage: !!dataUrl,
+    proactive: silent,
+    playMinutes: memory.playMinutes(),
+  });
   dbg('messages built', messages.length);
   if (dataUrl) {
     messages.push(llm.buildVisionMessage(transcript, dataUrl));
@@ -164,6 +185,7 @@ async function run(input = {}) {
   try {
     full = await llm.chatStream(messages, {
       temperature: 0.85,
+      onFallback: () => onEvent('warn', { message: '主接口没通，正在用备用接口重试' }),
       onDelta: (delta) => {
         if (isAborted()) return;
         onEvent('delta', { text: delta });
@@ -189,10 +211,21 @@ async function run(input = {}) {
   dbg('queue closed');
 
   if (full) memory.addTurn('assistant', full, game ? { game } : {});
+
+  // 粗略计一下今天往外发了多少（字数 + 张图），给“上传透明度”用
+  try {
+    const st = config.get().stats || {};
+    const today = new Date().toISOString().slice(0, 10);
+    const next = st.day === today
+      ? { day: today, chars: (st.chars || 0) + full.length + transcript.length, images: (st.images || 0) + (dataUrl ? 1 : 0) }
+      : { day: today, chars: full.length + transcript.length, images: dataUrl ? 1 : 0 };
+    config.save({ stats: next });
+  } catch {}
+
   onEvent('reply', { text: full });
   onEvent('state', { state: 'idle' });
   onEvent('timing', { totalMs: Date.now() - t });
   return { text: full, transcript };
 }
 
-module.exports = { run, abort };
+module.exports = { run, abort, isBusy };
