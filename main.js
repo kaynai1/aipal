@@ -99,16 +99,21 @@ function createSettings(section) {
   }
   const disp = screen.getPrimaryDisplay();
   const area = disp.workArea;
-  const w = Math.min(880, Math.round(area.width * 0.8));
-  const h = Math.min(780, Math.round(area.height * 0.86));
+  const w = Math.min(920, Math.round(area.width * 0.8));
+  const h = Math.min(800, Math.round(area.height * 0.86));
   settingsWin = new BrowserWindow({
     width: w,
     height: h,
+    minWidth: 760,
+    minHeight: 520,
     x: area.x + Math.round((area.width - w) / 2),
     y: area.y + Math.round((area.height - h) / 2),
     title: 'AIPal 设置',
-    backgroundColor: '#09090a',
+    frame: false,
+    roundedCorners: true,
+    backgroundColor: '#0c0c0e',
     autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -116,6 +121,9 @@ function createSettings(section) {
     },
   });
   settingsWin.setMenuBarVisibility(false);
+  settingsWin.once('ready-to-show', () => {
+    if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show();
+  });
   settingsWin.loadFile(path.join(__dirname, 'renderer', 'settings.html'), section ? { hash: section } : undefined);
   settingsWin.on('closed', () => {
     settingsWin = null;
@@ -309,6 +317,22 @@ ipcMain.handle('win:show', () => {
 });
 ipcMain.handle('win:openSettings', (_e, section) => {
   createSettings(typeof section === 'string' ? section : undefined);
+  return true;
+});
+
+/* 自绘标题栏的窗口控制 */
+ipcMain.handle('settings:minimize', () => {
+  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.minimize();
+  return true;
+});
+ipcMain.handle('settings:toggleMax', () => {
+  if (!settingsWin || settingsWin.isDestroyed()) return false;
+  if (settingsWin.isMaximized()) settingsWin.unmaximize();
+  else settingsWin.maximize();
+  return settingsWin.isMaximized();
+});
+ipcMain.handle('settings:close', () => {
+  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
   return true;
 });
 ipcMain.handle('app:openConfigDir', () => shell.openPath(app.getPath('userData')));

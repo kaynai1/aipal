@@ -1,27 +1,25 @@
 :root {
-  /* 石墨中性：深夜桌面的黑，微微偏冷 */
-  --bg: #09090a;
-  --side: #0f0f11;
-  --group: #141416;
-  --raise: #1c1c20;
-  --line: rgba(255, 255, 255, 0.075);
-  --line-strong: rgba(255, 255, 255, 0.14);
+  --bg: #0c0c0e;
+  --panel: #111114;
+  --card: #17171b;
+  --raise: #1e1e23;
+  --sunk: #0a0a0c;
 
-  --t1: #f2f1f4;
-  --t2: #a2a0a9;
-  --t3: #6b6973;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
 
-  /* 机箱指示灯的一点点暖 */
+  --t1: #f5f4f8;
+  --t2: #b0aeb9;
+  --t3: #7d7b87;
+
   --accent: #e3a86e;
-  --accent-dim: rgba(227, 168, 110, 0.13);
+  --accent-dim: rgba(227, 168, 110, 0.12);
 
-  --ok: #85b894;
-  --warn: #d9b26a;
+  --ok: #84bd97;
+  --warn: #dcb46c;
   --bad: #d98a85;
 
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --r-ctl: 8px;
-  --r-group: 14px;
 }
 
 * {
@@ -44,37 +42,108 @@ body {
 
 body {
   display: grid;
-  grid-template-columns: 232px 1fr;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: 244px 1fr;
+  grid-template-rows: 46px 1fr auto;
   grid-template-areas:
+    'title title'
     'side main'
     'side bar';
   height: 100vh;
 }
 
+/* ---------------- 自绘标题栏 ---------------- */
+.titlebar {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.tb-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.tb-brand .mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+.tb-brand span {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.003em;
+}
+.tb-brand em {
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--t3);
+}
+.tb-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+}
+.tb-btn {
+  width: 44px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #8b8994;
+  cursor: pointer;
+  transition:
+    background-color 130ms var(--ease),
+    color 130ms var(--ease);
+}
+.tb-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.15;
+  stroke-linecap: round;
+}
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--t1);
+}
+.tb-btn.close:hover {
+  background: #c4402f;
+  color: #fff;
+}
+
 /* ---------------- 侧栏 ---------------- */
 .side {
   grid-area: side;
-  background: var(--side);
+  background: var(--panel);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   padding: 16px 12px 14px;
-  gap: 20px;
+  gap: 18px;
+  min-height: 0;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 2px 8px;
+  gap: 11px;
+  padding: 0 8px;
 }
 .brand img {
   width: 38px;
   height: 38px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
 }
 .brand-txt {
   display: flex;
@@ -83,12 +152,12 @@ body {
   min-width: 0;
 }
 .brand-txt b {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   letter-spacing: -0.006em;
 }
 .brand-txt span {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--t3);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
@@ -97,16 +166,17 @@ body {
 nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  overflow-y: auto;
 }
 nav button {
   display: grid;
-  grid-template-columns: 16px 1fr;
+  grid-template-columns: 17px 1fr;
   align-items: center;
   gap: 10px;
-  height: 34px;
+  height: 36px;
   padding: 0 10px;
-  border-radius: var(--r-ctl);
+  border-radius: 9px;
   border: none;
   background: transparent;
   color: var(--t2);
@@ -115,19 +185,19 @@ nav button {
   text-align: left;
   cursor: pointer;
   transition:
-    background-color 140ms var(--ease),
-    color 140ms var(--ease);
+    background-color 130ms var(--ease),
+    color 130ms var(--ease);
 }
 nav button svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   color: var(--t3);
-  transition: color 140ms var(--ease);
+  transition: color 130ms var(--ease);
 }
 nav button:hover {
   background: rgba(255, 255, 255, 0.045);
@@ -137,8 +207,9 @@ nav button:hover svg {
   color: var(--t2);
 }
 nav button.on {
-  background: rgba(255, 255, 255, 0.075);
-  color: var(--t1);
+  background: rgba(255, 255, 255, 0.105);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.045);
 }
 nav button.on svg {
   color: var(--accent);
@@ -160,18 +231,21 @@ nav button:focus-visible {
   gap: 8px;
   padding: 0 8px;
   font-size: 10.5px;
+  line-height: 1.45;
   color: var(--t3);
-  line-height: 1.4;
 }
 .mark {
-  width: 20px;
-  height: 20px;
-  flex: none;
   border-radius: 5px;
+  flex: none;
+}
+.mark.sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
 }
 .mark.lg {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 11px;
 }
 
@@ -181,17 +255,19 @@ nav button:focus-visible {
   background: transparent;
   border: 1px solid var(--line);
   color: var(--t3);
-  border-radius: var(--r-ctl);
+  border-radius: 8px;
   cursor: pointer;
   font-size: 11.5px;
   font-family: inherit;
   transition:
-    color 140ms var(--ease),
-    border-color 140ms var(--ease);
+    color 130ms var(--ease),
+    border-color 130ms var(--ease),
+    background-color 130ms var(--ease);
 }
 .ghost:hover {
   color: var(--t2);
   border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
 }
 .ghost:focus-visible {
   outline: 2px solid var(--accent);
@@ -204,10 +280,9 @@ nav button:focus-visible {
   min-height: 0;
   background: var(--bg);
   overflow-y: auto;
-  padding: 30px 36px 28px;
-  position: relative;
+  padding: 26px 32px 24px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.11) transparent;
 }
 .main::-webkit-scrollbar {
   width: 8px;
@@ -220,32 +295,32 @@ nav button:focus-visible {
 
 .sec {
   display: none;
-  max-width: 660px;
+  max-width: 620px;
 }
 .sec.on {
   display: block;
-  animation: secIn 200ms var(--ease);
+  animation: secIn 190ms var(--ease);
 }
 @keyframes secIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(3px);
   }
 }
 
 h2 {
-  margin: 0 0 6px;
-  font-size: 25px;
+  margin: 0 0 5px;
+  font-size: 22px;
   font-weight: 500;
-  letter-spacing: -0.022em;
-  line-height: 1.25;
+  letter-spacing: -0.021em;
+  line-height: 1.3;
 }
 .lead {
   color: var(--t2);
   font-size: 13px;
   line-height: 1.65;
   margin: 0 0 20px;
-  max-width: 58ch;
+  max-width: 52ch;
 }
 
 code {
@@ -253,69 +328,62 @@ code {
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 11.5px;
-  line-height: 1.2;
   color: var(--t2);
   font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 }
 
-/* 分组：一张卡里的行清单，行与行只有一条发丝线 */
+/* 分组清单 */
 .group {
-  background: var(--group);
+  background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--r-group);
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .row-line {
-  display: flex;
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 15px 16px;
+  gap: 14px;
+  padding: 13px 16px;
   border-top: 1px solid var(--line);
 }
 .row-line:first-child {
   border-top: none;
 }
-.lead-cell {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 0;
-}
-.lead-cell b {
+.cell b {
   display: block;
   font-size: 13px;
   font-weight: 500;
   margin-bottom: 2px;
 }
-.lead-cell p {
+.cell p {
   margin: 0;
   font-size: 11.5px;
   color: var(--t3);
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
-/* 状态灯：全页唯一的彩色点 */
+/* 状态灯 */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  font-size: 10.5px;
+  gap: 7px;
+  font-size: 11px;
   color: var(--t3);
   white-space: nowrap;
-  flex: none;
 }
 .badge::before {
   content: '';
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.55;
-  transition: opacity 140ms var(--ease);
+  opacity: 0.45;
+  transition: opacity 130ms var(--ease);
 }
 .badge.ok {
   color: var(--ok);
@@ -332,64 +400,63 @@ code {
   opacity: 1;
 }
 
-/* 表单行 */
+/* 表单行：标签在左，控件在右 */
 .field {
-  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 142px minmax(0, 1fr);
+  column-gap: 18px;
+  row-gap: 5px;
+  align-items: center;
+  padding: 11px 16px;
   border-top: 1px solid var(--line);
-  display: block;
-  margin: 0;
 }
 .group > .field:first-child,
 .group > .box:first-child {
   border-top: none;
 }
-.field label {
-  display: block;
-  font-size: 11.5px;
-  color: var(--t3);
-  margin-bottom: 7px;
+.field > label {
+  grid-column: 1;
+  font-size: 12.5px;
+  color: var(--t2);
 }
-.field em,
-.switch-line em {
-  display: block;
+.field > input,
+.field > select {
+  grid-column: 2;
+}
+.field > em,
+.field > textarea + em {
+  grid-column: 2;
   font-style: normal;
   font-size: 11px;
   color: var(--t3);
-  line-height: 1.5;
-  margin-top: 6px;
+  line-height: 1.45;
 }
-.field.split {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+.field.top {
+  align-items: start;
+  padding-top: 13px;
 }
-.grow {
-  flex: 1;
-  min-width: 0;
+.field.top > label {
+  padding-top: 7px;
 }
-.sm {
-  width: 104px;
-  flex: none;
-}
-.field.split > div {
-  display: block;
+.field.top > textarea {
+  grid-column: 2;
 }
 
 input,
 select,
 textarea {
   width: 100%;
-  background: var(--raise);
-  border: 1px solid transparent;
-  border-radius: var(--r-ctl);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   color: var(--t1);
-  padding: 7px 10px;
+  padding: 6px 10px;
   font-size: 12.5px;
   font-family: inherit;
   outline: none;
   transition:
-    border-color 140ms var(--ease),
-    background-color 140ms var(--ease);
+    border-color 130ms var(--ease),
+    background-color 130ms var(--ease);
 }
 input,
 select {
@@ -404,50 +471,87 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: rgba(227, 168, 110, 0.55);
-  background: #202024;
+  background: #101013;
 }
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
 }
+input.short {
+  width: 124px;
+}
 textarea {
   resize: vertical;
   line-height: 1.7;
-  font-size: 12.5px;
 }
 select option {
-  background: var(--group);
-}
-input[type='checkbox'] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
-  margin: 0;
-  flex: none;
-  height: 16px;
+  background: var(--card);
 }
 input::placeholder,
 textarea::placeholder {
-  color: #55535c;
+  color: #56545e;
 }
 
-.switch-line {
-  display: flex;
+/* 开关行 */
+.switch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  padding: 13px 16px;
+  padding: 12px 16px;
   border-top: 1px solid var(--line);
   cursor: pointer;
-  margin: 0;
 }
-.switch-line span {
+.switch-row span {
   font-size: 12.5px;
   color: var(--t1);
 }
-.switch-line em {
-  margin-top: 3px;
+.switch-row em {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--t3);
+  line-height: 1.45;
+}
+
+input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 23px;
+  border-radius: 12px;
+  background: #2b2b32;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background-color 160ms var(--ease);
+}
+input[type='checkbox']::after {
+  content: '';
+  position: absolute;
+  left: 2.5px;
+  top: 2.5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #9c9aa6;
+  transition:
+    transform 180ms var(--ease),
+    background-color 160ms var(--ease);
+}
+input[type='checkbox']:checked {
+  background: var(--accent);
+}
+input[type='checkbox']:checked::after {
+  transform: translateX(17px);
+  background: #fff;
+}
+input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* 条件展开的接口区 */
@@ -458,17 +562,16 @@ textarea::placeholder {
   display: block;
 }
 .box .field {
-  padding-left: 16px;
-  background: rgba(255, 255, 255, 0.018);
+  background: rgba(0, 0, 0, 0.16);
 }
 
-/* 说明文字：不再是盒子，只在安静的地方写一句 */
+/* 说明 */
 .note {
   font-size: 11.5px;
-  line-height: 1.75;
+  line-height: 1.7;
   color: var(--t3);
-  margin: 16px 0 0;
-  max-width: 62ch;
+  margin: 14px 0 0;
+  max-width: 60ch;
 }
 .note b {
   color: var(--t2);
@@ -478,22 +581,23 @@ textarea::placeholder {
 /* ---------------- 按钮 ---------------- */
 .btn {
   border: 1px solid var(--line);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
   color: var(--t2);
   height: 30px;
   padding: 0 13px;
-  border-radius: var(--r-ctl);
+  border-radius: 8px;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
   transition:
-    background-color 140ms var(--ease),
-    color 140ms var(--ease),
-    border-color 140ms var(--ease);
+    background-color 130ms var(--ease),
+    color 130ms var(--ease),
+    border-color 130ms var(--ease),
+    transform 90ms var(--ease);
 }
 .btn:hover {
-  background: var(--raise);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--t1);
   border-color: var(--line-strong);
 }
@@ -505,25 +609,28 @@ textarea::placeholder {
   outline-offset: 2px;
 }
 .btn.primary {
-  background: #eceaf0;
+  background: #f2f1f5;
   color: #131316;
   font-weight: 500;
   border-color: transparent;
   padding: 0 18px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .btn.primary:hover {
-  background: #faf9fc;
+  background: #fdfcff;
 }
 .btn.ghost {
   border-color: transparent;
-  color: var(--t3);
+  background: transparent;
+  color: var(--t2);
 }
 .btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--t2);
 }
 .btn.danger {
-  border-color: rgba(217, 138, 133, 0.28);
+  border-color: rgba(217, 138, 133, 0.26);
+  background: transparent;
   color: var(--bad);
 }
 .btn.danger:hover {
@@ -533,7 +640,6 @@ textarea::placeholder {
 .btn[disabled] {
   opacity: 0.45;
   cursor: default;
-  transform: none;
 }
 
 /* ---------------- 模型清单 ---------------- */
@@ -541,7 +647,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 16px 0 0;
+  margin: 14px 0 0;
 }
 .model-tip {
   font-size: 11.5px;
@@ -549,12 +655,12 @@ textarea::placeholder {
   line-height: 1.5;
 }
 .model-box {
-  margin-top: 12px;
+  margin-top: 10px;
   border: 1px solid var(--line);
-  background: var(--group);
-  border-radius: 10px;
+  background: var(--card);
+  border-radius: 12px;
   padding: 10px;
-  max-height: 196px;
+  max-height: 190px;
   overflow-y: auto;
   display: flex;
   flex-wrap: wrap;
@@ -578,9 +684,9 @@ textarea::placeholder {
   cursor: pointer;
   font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
   transition:
-    background-color 140ms var(--ease),
-    border-color 140ms var(--ease),
-    color 140ms var(--ease);
+    background-color 130ms var(--ease),
+    border-color 130ms var(--ease),
+    color 130ms var(--ease);
 }
 .model-chip:hover {
   background: var(--raise);
@@ -605,11 +711,11 @@ textarea::placeholder {
   flex-direction: column;
   gap: 6px;
   margin-bottom: 12px;
-  max-height: 336px;
+  max-height: 320px;
   overflow-y: auto;
 }
 .mem-item {
-  background: var(--group);
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 13px;
@@ -631,7 +737,7 @@ textarea::placeholder {
   flex: 1;
 }
 .danger-zone {
-  margin-top: 28px;
+  margin-top: 26px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
@@ -641,38 +747,36 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--group);
+  background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--r-group);
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 14px;
+  padding: 15px 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 1px 2px rgba(0, 0, 0, 0.25);
 }
-.upd-head > div {
+.upd-info {
   min-width: 0;
+  flex: 1;
 }
 .upd-ver {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
 }
 .upd-meta {
   font-size: 11.5px;
   color: var(--t3);
   font-variant-numeric: tabular-nums;
-  margin-top: 2px;
-}
-.upd-head .badge {
-  margin: 0 0 0 auto;
-  align-self: center;
 }
 .upd-notes {
   font-size: 11.8px;
   color: var(--t2);
   line-height: 1.7;
   white-space: pre-wrap;
-  max-height: 168px;
+  max-height: 160px;
   overflow-y: auto;
   padding-left: 12px;
   border-left: 1px solid var(--line-strong);
@@ -690,7 +794,7 @@ textarea::placeholder {
   height: 100%;
   width: 0;
   background: var(--accent);
-  transition: width 160ms linear;
+  transition: width 150ms linear;
 }
 .prog-text {
   font-size: 11px;
@@ -704,19 +808,18 @@ textarea::placeholder {
   flex-wrap: wrap;
 }
 
-/* ---------------- 底栏：独立一行里的整条工具岛 ---------------- */
+/* ---------------- 底栏 ---------------- */
 .bar {
   grid-area: bar;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin: 0 36px 14px;
-  padding: 7px 10px 7px 16px;
-  background: rgba(21, 21, 24, 0.92);
+  margin: 0 32px 12px;
+  padding: 7px 8px 7px 16px;
+  background: rgba(23, 23, 27, 0.94);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
 }
 .bar > div {
   display: flex;

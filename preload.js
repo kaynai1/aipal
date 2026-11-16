@@ -49,6 +49,9 @@ contextBridge.exposeInMainWorld('api', {
     hide: () => ipcRenderer.invoke('win:hide'),
     show: () => ipcRenderer.invoke('win:show'),
     openSettings: (section) => ipcRenderer.invoke('win:openSettings', section),
+    minimize: () => ipcRenderer.invoke('settings:minimize'),
+    toggleMax: () => ipcRenderer.invoke('settings:toggleMax'),
+    close: () => ipcRenderer.invoke('settings:close'),
   },
 
   app: {

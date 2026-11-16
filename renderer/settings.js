@@ -401,6 +401,11 @@ bridge.on.config((c) => {
   cfg = c;
 });
 
+/* ---------------- 自绘标题栏 ---------------- */
+$('tbMin').addEventListener('click', () => bridge.win.minimize());
+$('tbMax').addEventListener('click', () => bridge.win.toggleMax());
+$('tbClose').addEventListener('click', () => bridge.win.close());
+
 load().catch((err) => {
   tip(`载入失败：${err.message}`, true);
 });
