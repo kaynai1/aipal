@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>AIPal 设置</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <aside class="side">
+      <div class="brand">
+        <img src="avatar.png" alt="" />
+        <div>
+          <b>AIPal</b>
+          <span id="ver">v0.1.0</span>
+        </div>
+      </div>
+      <nav id="nav">
+        <button class="on" data-sec="check">连接自检</button>
+        <button data-sec="brain">大脑 · 对话</button>
+        <button data-sec="ears">耳朵 · 识别</button>
+        <button data-sec="mouth">嘴 · 语音</button>
+        <button data-sec="persona">角色卡</button>
+        <button data-sec="interact">交互</button>
+        <button data-sec="memory">记忆</button>
+        <button data-sec="upd">版本与更新</button>
+      </nav>
+      <div class="side-foot">
+        <button class="ghost" id="btnDir">打开配置文件夹</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- 自检 -->
+      <section class="sec on" data-sec="check">
+        <h2>连接自检</h2>
+        <p class="lead">三条通道各点一下，确认真能用再开局。任何一条不通，她会当场哑火。</p>
+        <div class="checks">
+          <div class="check-card">
+            <div class="cc-head"><b>耳朵</b><span class="badge" id="bAsr">未检测</span></div>
+            <p id="dAsr" class="cc-desc">本机离线识别：免费、无 Key、断网可用</p>
+            <button class="btn" id="ckAsr">检测识别</button>
+          </div>
+          <div class="check-card">
+            <div class="cc-head"><b>大脑</b><span class="badge" id="bLlm">未检测</span></div>
+            <p id="dLlm" class="cc-desc">需要填一个 OpenAI 兼容接口和 Key</p>
+            <button class="btn" id="ckLlm">检测对话</button>
+          </div>
+          <div class="check-card">
+            <div class="cc-head"><b>嘴</b><span class="badge" id="bTts">未检测</span></div>
+            <p id="dTts" class="cc-desc">Edge 免费语音：无需 Key，直接出声</p>
+            <button class="btn" id="ckTts">检测发声</button>
+          </div>
+        </div>
+        <div class="note">
+          <b>免费怎么玩：</b>耳朵用本机识别、嘴用 Edge 免费语音，这两条不需要任何 Key；
+          只有大脑要一个模型接口（硅基流动注册后送免费额度，或者接本机 Ollama）。
+        </div>
+      </section>
+
+      <section class="sec" data-sec="brain">
+        <h2>大脑 · 对话模型</h2>
+        <p class="lead">兼容 OpenAI 的 <code>/chat/completions</code>，硅基流动、火山方舟、DeepSeek、Ollama 都能填。</p>
+        <label>接口地址
+          <input id="llmBase" placeholder="https://api.siliconflow.cn/v1" />
+          <em>末尾不要带 /chat/completions，只填到 /v1</em>
+        </label>
+        <label>API Key
+          <input id="llmKey" type="password" placeholder="sk-..." />
+          <em id="llmKeyHint">填一次就行，存在本机配置文件里</em>
+        </label>
+        <div class="row">
+          <label class="grow">模型名
+            <input id="llmModel" placeholder="Qwen/Qwen2.5-7B-Instruct" />
+          </label>
+          <label class="sm">温度
+            <input id="llmTemp" type="number" step="0.05" min="0" max="1.5" />
+          </label>
+          <label class="sm">最多字数
+            <input id="llmMax" type="number" step="10" min="40" max="800" />
+          </label>
+        </div>
+        <div class="model-row">
+          <button class="btn" id="btnModels">拉取可用模型</button>
+          <span class="model-tip" id="modelTip">手填模型名最容易出错，建议直接拉一份真实清单来选</span>
+        </div>
+        <div class="model-box" id="modelBox" hidden></div>
+        <div class="note">
+          想看画面就得选<b>支持图片</b>的模型（硅基流动的 Qwen2.5-VL、Qwen2-VL 等）。
+          纯文本模型也能聊，但"看屏幕"会失败。
+        </div>
+      </section>
+
+      <section class="sec" data-sec="ears">
+        <h2>耳朵 · 语音识别</h2>
+        <label>识别方式
+          <select id="asrProv">
+            <option value="sapi">本机离线识别（免费，无需 Key）</option>
+            <option value="api">云端接口（更准，需 Key）</option>
+          </select>
+        </label>
+        <div id="asrApiBox" class="box">
+          <label>接口地址
+            <input id="asrBase" placeholder="https://api.siliconflow.cn/v1" />
+            <em>兼容 OpenAI /audio/transcriptions 的任意服务</em>
+          </label>
+          <label>API Key
+            <input id="asrKey" type="password" placeholder="sk-..." />
+            <em id="asrKeyHint">留空表示不修改已保存的 Key</em>
+          </label>
+          <label>模型名
+            <input id="asrModel" placeholder="FunAudioLLM/SenseVoiceSmall" />
+          </label>
+        </div>
+        <div class="note">
+          本机识别用的是 Windows 自带中文识别引擎，安静房间里够用，开黑有噪音时会掉字。
+          识别不准就换云端，硅基流动的 SenseVoice 有免费额度。
+        </div>
+      </section>
+
+      <section class="sec" data-sec="mouth">
+        <h2>嘴 · 语音合成</h2>
+        <label>合成方式
+          <select id="ttsProv">
+            <option value="edge">Edge 免费语音（无需 Key）</option>
+            <option value="api">云端接口（需 Key）</option>
+          </select>
+        </label>
+        <label>音色
+          <select id="ttsVoice"></select>
+        </label>
+        <div class="row">
+          <label class="grow">语速
+            <input id="ttsRate" placeholder="+8%" />
+          </label>
+          <label class="grow">音调
+            <input id="ttsPitch" placeholder="+0Hz" />
+          </label>
+        </div>
+        <div id="ttsApiBox" class="box">
+          <label>接口地址
+            <input id="ttsBase" placeholder="https://api.openai.com/v1" />
+          </label>
+          <label>API Key
+            <input id="ttsKey" type="password" placeholder="sk-..." />
+            <em id="ttsKeyHint">留空表示不修改已保存的 Key</em>
+          </label>
+          <label>模型名
+            <input id="ttsModel" placeholder="tts-1" />
+          </label>
+        </div>
+        <div class="note">
+          语速范围大致 <code>-50% ~ +100%</code>，音调 <code>-50Hz ~ +50Hz</code>。
+          嫌她太吵就把语速调到 <code>+20%</code>，一句话更快说完。
+        </div>
+      </section>
+
+      <section class="sec" data-sec="persona">
+        <h2>角色卡</h2>
+        <div class="row">
+          <label class="grow">她叫什么
+            <input id="pName" placeholder="小满" />
+          </label>
+          <label class="grow">她怎么叫你
+            <input id="pCall" placeholder="老板" />
+          </label>
+        </div>
+        <label>性格与说话方式
+          <textarea id="pStyle" rows="7"></textarea>
+          <em>这段话直接决定她像不像个人。写"最多两句、爱损人、不许编造"这类硬规矩最有效。</em>
+        </label>
+        <div class="note">
+          她还会自动知道：你现在在玩什么、你常玩哪些游戏、你让她记过的事、当前是几点。
+        </div>
+      </section>
+
+      <section class="sec" data-sec="interact">
+        <h2>交互</h2>
+        <div class="row">
+          <label class="grow">说话热键
+            <input id="hotkey" placeholder="F8" />
+            <em>写 Electron 加速键名，如 F8、Alt+Q、CommandOrControl+Shift+G</em>
+          </label>
+          <label class="grow">什么时候听
+            <select id="trigger">
+              <option value="hotkey">只按热键</option>
+              <option value="both">热键 + 自动听</option>
+              <option value="auto">只自动听</option>
+            </select>
+          </label>
+        </div>
+        <label class="line">
+          <input type="checkbox" id="vision" />
+          <span>说话时顺手看一眼屏幕（需要多模态模型）</span>
+        </label>
+        <label class="line">
+          <input type="checkbox" id="clickThrough" />
+          <span>鼠标穿透（点窗口不再挡住游戏，只能靠热键操作）</span>
+        </label>
+        <div class="row">
+          <label class="grow">带多少轮上下文
+            <input id="memoryTurns" type="number" min="2" max="40" />
+            <em>越大越连贯，也越费 token</em>
+          </label>
+        </div>
+        <div class="note">
+          游戏开了全屏独占时，Windows 会挡住所有悬浮窗。把游戏改成「窗口化无边框」，她就一直待在你屏幕角落。
+        </div>
+      </section>
+
+      <section class="sec" data-sec="memory">
+        <h2>记忆</h2>
+        <p class="lead">她记得的事都存本机。你可以直接对她说"记住我不吃辣"这类话，让她写进来。</p>
+        <div class="mem-list" id="memList"></div>
+        <div class="row">
+          <input id="memInput" class="grow" placeholder="手动加一条：他喜欢打排位，别问他为什么不上分" />
+          <button class="btn" id="memAdd">记下来</button>
+        </div>
+        <div class="danger-zone">
+          <button class="btn danger" id="memClear">清空全部记忆（对话 + 笔记）</button>
+        </div>
+      </section>
+
+      <section class="sec" data-sec="upd">
+        <h2>版本与更新</h2>
+        <p class="lead">更新包从 GitHub Releases 取。便携版可以直接在软件里替换，不用重新下载整个包。</p>
+
+        <div class="upd-card">
+          <div class="upd-row">
+            <div>
+              <div class="upd-ver" id="curVer">v0.1.2</div>
+              <div class="upd-meta" id="updMeta">当前版本</div>
+            </div>
+            <span class="badge" id="updBadge">未检查</span>
+          </div>
+          <div class="upd-notes" id="updNotes" hidden></div>
+          <div class="progress" id="updProgressWrap" hidden><i id="updBar"></i></div>
+          <div class="prog-text" id="updProgText" hidden></div>
+          <div class="upd-actions">
+            <button class="btn primary" id="btnCheckUpdate">检查更新</button>
+            <button class="btn" id="btnDownload" hidden>下载并安装</button>
+            <button class="btn" id="btnReleasePage">打开下载页</button>
+          </div>
+        </div>
+
+        <div class="note">
+          更新流程：下载到临时目录 → 程序退出 → 自动替换 → 重新启动。
+          你填的 Key、人设和记忆都在 <code>%APPDATA%\AIPal</code>，不会被覆盖。
+        </div>
+      </section>
+
+      <footer class="bar">
+        <span id="saveTip" class="saveTip"></span>
+        <div>
+          <button class="btn ghost" id="btnReset">恢复默认</button>
+          <button class="btn primary" id="btnSave">保存并生效</button>
+        </div>
+      </footer>
+    </main>
+    <script src="settings.js"></script>
+  </body>
+</html>

@@ -1,0 +1,61 @@
+{
+  "name": "aipal",
+  "productName": "AIPal",
+  "version": "0.1.2",
+  "description": "AI 游戏搭子：实时语音陪玩 + 看得懂画面 + 记得住你",
+  "main": "main.js",
+  "author": "AIPal",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.1.1"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.aipal.app",
+    "productName": "AIPal",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "main/**/*",
+      "renderer/**/*",
+      "icon.png",
+      "icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "helpers",
+        "to": "helpers"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "artifactName": "AIPal-${version}-setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "AIPal"
+    },
+    "portable": {
+      "artifactName": "AIPal-${version}-portable.${ext}"
+    }
+  }
+}

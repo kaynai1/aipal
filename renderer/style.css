@@ -1,0 +1,462 @@
+:root {
+  /* 石墨中性阶 —— 深夜电竞房的桌面与机身 */
+  --bg: #0b0b0c;
+  --card: #131315;
+  --raise: #1b1b1e;
+  --raise-2: #232327;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.12);
+
+  /* 三级文字 */
+  --t1: #f3f2f5;
+  --t2: #a5a3ac;
+  --t3: #6d6b74;
+
+  /* 唯一强调色：台灯暖光 */
+  --accent: #e3a86e;
+  --accent-dim: rgba(227, 168, 110, 0.16);
+
+  --ok: #7fb894;
+  --warn: #d9b26a;
+  --bad: #d98a85;
+
+  --r-card: 20px;
+  --r-btn: 12px;
+  --r-chip: 9px;
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --level: 0;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--t1);
+  overflow: hidden;
+  user-select: none;
+  font-family: 'SF Pro Text', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-feature-settings: 'cv05' 1, 'cv11' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  height: 100%;
+  padding: 8px;
+}
+
+/* 窗口本体：一层实色 + 一道发丝线，没有光晕 */
+.card {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-card);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 24px 48px -20px rgba(0, 0, 0, 0.7),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag,
+button {
+  -webkit-app-region: no-drag;
+}
+
+/* 紧凑态：只留头部与操作 */
+.card.mini .talk,
+.card.mini .wave {
+  display: none;
+}
+.card.mini .foot {
+  padding: 0 12px 12px;
+  gap: 8px;
+}
+.card.mini .hint {
+  display: none;
+}
+
+/* ---------------- 头部 ---------------- */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 10px;
+}
+
+.ava-wrap {
+  position: relative;
+  flex: none;
+  width: 42px;
+  height: 42px;
+}
+
+/* 签名细节：说话时才亮起来的暖色声纹环 */
+.ava-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  opacity: calc(0.05 + var(--level) * 0.95);
+  transform: scale(calc(0.96 + var(--level) * 0.08));
+  transition:
+    opacity 120ms linear,
+    transform 120ms linear;
+  pointer-events: none;
+}
+
+.ava {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--t3);
+  border: 2px solid var(--card);
+  transition: background 180ms var(--ease);
+}
+.dot.live {
+  background: var(--ok);
+}
+.dot.think {
+  background: var(--warn);
+}
+.dot.speak {
+  background: var(--accent);
+}
+.dot.bad {
+  background: var(--bad);
+}
+
+.who {
+  flex: 1;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+}
+
+.name-row b {
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  flex: none;
+}
+
+.pill {
+  font-size: 10.5px;
+  color: var(--t3);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 5px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: 11.5px;
+  color: var(--t3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tools {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--t3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    color 160ms var(--ease),
+    background-color 160ms var(--ease);
+}
+.ic:hover {
+  background: var(--raise);
+  color: var(--t1);
+}
+.ic:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* 有新版时的小标记，静态，不闪 */
+.ic.update {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+.ic.update::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(9px, -9px);
+}
+
+/* ---------------- 对话 ---------------- */
+.talk {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.talk::-webkit-scrollbar {
+  width: 4px;
+}
+.talk::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.bubble {
+  font-size: 13px;
+  line-height: 1.65;
+  padding: 9px 12px;
+  border-radius: 13px;
+  word-break: break-word;
+  animation: rise 220ms var(--ease);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.bubble.me {
+  align-self: flex-end;
+  max-width: 84%;
+  color: var(--t2);
+  border: 1px solid var(--line);
+  border-bottom-right-radius: 5px;
+}
+
+.bubble.ai {
+  align-self: flex-start;
+  max-width: 92%;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 5px;
+}
+
+.ghost {
+  color: var(--t3);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.caret::after {
+  content: '';
+  display: inline-block;
+  width: 1.5px;
+  height: 12px;
+  margin-left: 2px;
+  background: var(--accent);
+  vertical-align: -2px;
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---------------- 声波 ---------------- */
+.wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 26px;
+  padding: 0 16px;
+  opacity: 0.22;
+  transition: opacity 220ms var(--ease);
+}
+.wave i {
+  width: 2px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--t2);
+  transition: height 90ms linear;
+}
+.wave.on {
+  opacity: 1;
+}
+.wave.on i {
+  background: var(--accent);
+}
+
+/* ---------------- 底部 ---------------- */
+.foot {
+  padding: 2px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  border: none;
+  border-radius: var(--r-btn);
+  cursor: pointer;
+  background: #eae8ee;
+  color: #16161a;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  letter-spacing: -0.005em;
+  transition:
+    background-color 160ms var(--ease),
+    transform 120ms var(--ease),
+    opacity 160ms var(--ease);
+}
+.mic:hover {
+  background: #f6f4f9;
+}
+.mic:active {
+  transform: scale(0.99);
+}
+.mic:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.mic.rec {
+  background: var(--accent);
+  color: #1a1206;
+}
+.mic.dim {
+  background: var(--raise);
+  color: var(--t2);
+}
+
+.mic-ico {
+  display: grid;
+  place-items: center;
+}
+
+.switches {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  position: relative;
+  flex: 1;
+  height: 28px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--t3);
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    color 160ms var(--ease),
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+.chip:hover {
+  color: var(--t2);
+  border-color: var(--line-strong);
+}
+.chip.on {
+  color: var(--t1);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--line-strong);
+}
+/* 开启状态用一道左侧暖线，而不是渐变底 */
+.chip.on::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 2px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--accent);
+  transform: translateY(-50%);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.hint {
+  font-size: 10.5px;
+  color: var(--t3);
+  text-align: center;
+  min-height: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.hint.warn {
+  color: var(--warn);
+}
+.hint.bad {
+  color: var(--bad);
+}
+
+/* 说话/聆听时把声纹推起来 */
+body[data-state='listening'] .ava-ring,
+body[data-state='speaking'] .ava-ring {
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
