@@ -20,8 +20,8 @@ contextBridge.exposeInMainWorld('api', {
   check: {
     asr: () => ipcRenderer.invoke('check:asr'),
     tts: () => ipcRenderer.invoke('check:tts'),
-    llm: () => ipcRenderer.invoke('check:llm'),
-    models: () => ipcRenderer.invoke('llm:models'),
+    llm: (o) => ipcRenderer.invoke('check:llm', o),
+    models: (o) => ipcRenderer.invoke('llm:models', o),
   },
 
   voices: () => ipcRenderer.invoke('voice:list'),

@@ -222,12 +222,21 @@ function tip(text, bad) {
   }, 4000);
 }
 
+/* 当前大璃表单里的值（直接用输入框，避免用旧保存值） */
+function llmFieldOverride() {
+  return {
+    baseUrl: $('llmBase').value.trim(),
+    apiKey: $('llmKey').value.trim(),
+    model: $('llmModel').value.trim(),
+  };
+}
+
 /* ---------------- 自检 ---------------- */
 async function runCheck(kind) {
   const map = {
-    asr: { badge: 'bAsr', desc: 'dAsr', btn: 'ckAsr', label: '检测识别', fn: bridge.check.asr },
-    llm: { badge: 'bLlm', desc: 'dLlm', btn: 'ckLlm', label: '检测对话', fn: bridge.check.llm },
-    tts: { badge: 'bTts', desc: 'dTts', btn: 'ckTts', label: '检测发声', fn: bridge.check.tts },
+    asr: { badge: 'bAsr', desc: 'dAsr', btn: 'ckAsr', label: '检测识别', fn: () => bridge.check.asr() },
+    llm: { badge: 'bLlm', desc: 'dLlm', btn: 'ckLlm', label: '检测对话', fn: () => bridge.check.llm(llmFieldOverride()) },
+    tts: { badge: 'bTts', desc: 'dTts', btn: 'ckTts', label: '检测发声', fn: () => bridge.check.tts() },
   }[kind];
 
   const badge = $(map.badge);
@@ -244,7 +253,6 @@ async function runCheck(kind) {
     const el = $(map.desc);
     el.textContent = r.message;
     el.style.color = r.ok ? '' : '#ff9b9b';
-    if (!r.ok && kind === 'llm') $('modelTip').textContent = '先看上面的报错，再到下面「拉取可用模型」挑一个真实存在的';
   } catch (err) {
     badge.textContent = '没通';
     badge.className = 'badge bad';
@@ -272,18 +280,15 @@ $('btnModels').addEventListener('click', async () => {
   box.innerHTML = '';
 
   try {
-    const r = await bridge.check.models();
-    box.hidden = false;
+    const r = await bridge.check.models(llmFieldOverride());
     if (!r.ok) {
       tipEl.textContent = r.message;
-      tipEl.style.color = '#ff8181';
-      const d = document.createElement('div');
-      d.className = 'model-empty';
-      d.textContent = r.message;
-      box.appendChild(d);
+      tipEl.style.color = '#ff9b9b';
       return;
     }
-    tipEl.textContent = `拉到 ${r.count} 个可用模型，点一个就填进上面的模型名`;
+    box.hidden = false;
+    tipEl.style.color = '';
+    tipEl.textContent = `拉到 ${r.count} 个，点一个就填进模型名`;
     const cur = $('llmModel').value.trim();
     for (const id of r.models) {
       const chip = document.createElement('button');

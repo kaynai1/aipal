@@ -172,8 +172,14 @@ function buildVisionMessage(text, dataUrl) {
   };
 }
 
-async function check() {
-  const o = options();
+async function check(override = {}) {
+  const o = { ...options() };
+  if (typeof override.baseUrl === 'string' && override.baseUrl.trim()) {
+    o.base = override.baseUrl.trim().replace(/\/+$/, '');
+  }
+  if (typeof override.apiKey === 'string' && override.apiKey.trim()) o.key = override.apiKey.trim();
+  if (override.model) o.model = String(override.model).trim();
+
   if (!o.base) return { ok: false, message: '请先填写接口地址' };
   if (!o.key && !/localhost|127\.0\.0\.1/.test(o.base)) return { ok: false, message: '请先填写 Key' };
   if (!o.model) return { ok: false, message: '请先填写模型名，或点「拉取可用模型」选一个' };
@@ -229,10 +235,17 @@ async function check() {
 
 /**
  * 拉取该接口真实的模型清单（GET /models）。
- * 手填模型名最容易踩坑，这里直接给后端要一份。
+ * override 可传界面里「还没保存」的当前值：{ baseUrl, apiKey, model }
+ * 这样用户换了新 Key 不用先保存就能直接拉。
  */
-async function listModels() {
-  const o = options();
+async function listModels(override = {}) {
+  const o = { ...options() };
+  if (typeof override.baseUrl === 'string' && override.baseUrl.trim()) {
+    o.base = override.baseUrl.trim().replace(/\/+$/, '');
+  }
+  if (typeof override.apiKey === 'string' && override.apiKey.trim()) o.key = override.apiKey.trim();
+  if (override.model) o.model = String(override.model).trim();
+
   if (!o.base) return { ok: false, message: '请先填写接口地址' };
   if (!o.key && !/localhost|127\.0\.0\.1/.test(o.base)) return { ok: false, message: '请先填写 Key，拉模型清单需要鉴权' };
 

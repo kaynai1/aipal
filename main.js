@@ -134,7 +134,7 @@ function createSettings(section) {
     title: 'AIPal 设置',
     frame: false,
     roundedCorners: true,
-    backgroundColor: '#0c0c0e',
+    backgroundColor: '#0a0a0b',
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
@@ -333,8 +333,8 @@ ipcMain.handle('config:reset', () => {
 
 ipcMain.handle('check:asr', () => asr.check());
 ipcMain.handle('check:tts', () => tts.check());
-ipcMain.handle('check:llm', () => llm.check());
-ipcMain.handle('llm:models', () => llm.listModels());
+ipcMain.handle('check:llm', (_e, override) => llm.check(override || {}));
+ipcMain.handle('llm:models', (_e, override) => llm.listModels(override || {}));
 
 ipcMain.handle('voice:list', async () => [
   { id: 'zh-CN-XiaoxiaoNeural', label: '晓晓 · 温柔女声' },

@@ -1,10 +1,13 @@
 {
   "name": "aipal",
   "productName": "AIPal",
-  "version": "0.1.6",
-  "description": "AI 娓告垙鎼瓙锛氬疄鏃惰闊抽櫔鐜?+ 鐪嬪緱鎳傜敾闈?+ 璁板緱浣忎綘",
+  "version": "0.1.7",
+  "description": "AI 语音游戏搭子：实时通话 + 看得懂画面 + 记得住你",
   "main": "main.js",
-  "author": "AIPal",
+  "author": {
+    "name": "AIPal",
+    "email": "aipal@example.com"
+  },
   "license": "UNLICENSED",
   "private": true,
   "type": "commonjs",
@@ -30,14 +33,9 @@
       "preload.js",
       "main/**/*",
       "renderer/**/*",
+      "helpers/**/*",
       "icon.png",
       "icon.ico"
-    ],
-    "extraResources": [
-      {
-        "from": "helpers",
-        "to": "helpers"
-      }
     ],
     "win": {
       "target": [
@@ -45,17 +43,25 @@
         "portable"
       ],
       "icon": "icon.ico",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": true
     },
     "nsis": {
       "artifactName": "AIPal-${version}-setup.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "AIPal"
+      "shortcutName": "AIPal",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "language": "2052",
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "runAfterFinish": true
     },
     "portable": {
       "artifactName": "AIPal-${version}-portable.${ext}"
-    }
+    },
+    "asar": false
   }
 }
