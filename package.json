@@ -1,7 +1,7 @@
 {
   "name": "aipal",
   "productName": "AIPal",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "AI 语音游戏搭子：实时通话 + 看得懂画面 + 记得住你",
   "main": "main.js",
   "author": {

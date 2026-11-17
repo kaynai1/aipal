@@ -30,6 +30,7 @@ const pipeline = require('./main/pipeline');
 const memory = require('./main/memory');
 const game = require('./main/game');
 const updater = require('./main/updater');
+const watcher = require('./main/watch');
 const dbg = require('./main/debug');
 
 const isDev = process.argv.includes('--dev');
@@ -319,6 +320,7 @@ ipcMain.handle('config:save', (_e, patch) => {
   if (patch && patch.autoStart !== undefined) applyAutoStart(!!cfg.autoStart);
   if (patch && patch.opacity !== undefined) applyOpacity(cfg.opacity);
   if (patch && patch.proactive !== undefined) scheduleProactive();
+  if (patch && patch.watch !== undefined) watcher.restart();
   send('config', config.masked());
   return config.masked();
 });
@@ -657,6 +659,13 @@ if (!gotLock) {
     applyAutoStart(!!cfg0.autoStart);
     applyOpacity(cfg0.opacity);
     scheduleProactive();
+    watcher.start();
+
+    // 统计每个游戏玩了多久（记忆里“他常玩什么”的依据）
+    setInterval(() => {
+      const g = game.get();
+      if (g.game) memory.addPlay(g.game, 60000);
+    }, 60000);
 
     // 预热语音合成连接：第一次说话就不用干等握手（预热失败不影响使用）
     tts.edge.warmup().catch(() => {});
@@ -680,6 +689,7 @@ if (!gotLock) {
     game.stop();
     asr.sapi.stop();
     tts.edge.reset();
+    watcher.stop();
     if (proactiveTimer) clearInterval(proactiveTimer);
   });
 

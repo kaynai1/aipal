@@ -334,7 +334,7 @@
             </select>
           </div>
           <label class="switch-row" for="vision">
-            <span>说话时顺手看一眼屏幕<em>需要多模态模型</em></span>
+            <span>看屏幕<em>说话和观战都要开这个，需要多模态模型</em></span>
             <input type="checkbox" id="vision" />
           </label>
           <label class="switch-row" for="clickThrough">
@@ -382,6 +382,35 @@
             <em>越大越连贯，也越费 token</em>
           </div>
         </div>
+
+        <h3 class="sub">实况观战</h3>
+        <p class="lead">不用你先开口：她隔一阵看一帧画面，有值得说的（激烈交战、团灭、结算、卡关）就说一句，没什么可说就闭嘴。</p>
+        <div class="group">
+          <label class="switch-row" for="watchOn">
+            <span>她在看你打游戏<em>主开关，关掉就完全安静</em></span>
+            <input type="checkbox" id="watchOn" />
+          </label>
+          <div class="field">
+            <label for="watchInterval">看画面的间隔</label>
+            <input id="watchInterval" class="short" type="number" min="10" max="120" />
+            <em>秒。越小越跟得上节奏，也越费钱</em>
+          </div>
+          <div class="field">
+            <label for="watchChat">话多程度</label>
+            <select id="watchChat">
+              <option value="calm">冷静（大场面才开口）</option>
+              <option value="normal">正常</option>
+              <option value="chatty">话痨（你确定？）</option>
+            </select>
+          </div>
+          <label class="switch-row" for="watchOnlyGame">
+            <span>只在游戏里搭话<em>桌面、浏览器里不打扰你</em></span>
+            <input type="checkbox" id="watchOnlyGame" />
+          </label>
+        </div>
+        <p class="note">
+          观战必须选一个<b>支持图片</b>的模型（大脑页里拉清单选带 VL / vision / glm-4v 的）。纯文本模型没法看画面，观战会一直沉默。
+        </p>
 
         <p class="note">
           游戏开了全屏独占时，Windows 会挡住所有悬浮窗。把游戏改成「窗口化无边框」，她就一直待在你屏幕角落。

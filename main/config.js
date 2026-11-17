@@ -83,6 +83,13 @@ const DEFAULTS = {
     idleMinutes: 10,
     breakMinutes: 120,
   },
+  // 实况观战：周期截屏 → 看懂画面 → 主动评论
+  watch: {
+    enabled: true,
+    intervalSec: 25,
+    chattiness: 'normal', // calm | normal | chatty
+    onlyGame: true,
+  },
   autoStart: false,
   // 粗略统计今天发给模型的内容量，用于"上传透明度"
   stats: {

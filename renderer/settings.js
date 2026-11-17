@@ -76,6 +76,11 @@ async function load() {
   $('proactiveOn').checked = !!pr.enabled;
   $('proactiveIdle').value = pr.idleMinutes ?? 10;
   $('proactiveBreak').value = pr.breakMinutes ?? 120;
+  const wh = cfg.watch || {};
+  $('watchOn').checked = wh.enabled !== false;
+  $('watchInterval').value = wh.intervalSec ?? 25;
+  $('watchChat').value = wh.chattiness || 'normal';
+  $('watchOnlyGame').checked = wh.onlyGame !== false;
   $('opacity').value = Math.round((cfg.opacity ?? 1) * 100);
 
   await loadMics();
@@ -172,6 +177,12 @@ function collect() {
       enabled: $('proactiveOn').checked,
       idleMinutes: Math.max(2, Math.min(120, Number($('proactiveIdle').value) || 10)),
       breakMinutes: Math.max(20, Math.min(480, Number($('proactiveBreak').value) || 120)),
+    },
+    watch: {
+      enabled: $('watchOn').checked,
+      intervalSec: Math.max(10, Math.min(120, Number($('watchInterval').value) || 25)),
+      chattiness: $('watchChat').value || 'normal',
+      onlyGame: $('watchOnlyGame').checked,
     },
     llmFallback: {
       baseUrl: $('fbBase').value.trim(),

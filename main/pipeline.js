@@ -83,6 +83,13 @@ let activeId = 0;
 let aborted = false;
 let running = false;
 
+/** 观战模式：模型可以回「不说」表示这帧不评论 */
+function isSilentReply(t) {
+  const s = String(t || '').replace(/[\s。．·，,、!！?？…~～（）()「」『』""'']/g, '');
+  if (!s) return true;
+  return ['不说', '沉默', '无', '没有', '没什么', '没什么好说的', '这帧不说'].includes(s);
+}
+
 function abort() {
   aborted = true;
   activeId++;
@@ -159,6 +166,8 @@ async function runTurn(input, myId, isAborted, onEvent) {
     fullscreen,
     hasImage: !!dataUrl,
     proactive: silent,
+    watch: !!input.watch,
+    watchChatty: input.watchChatty || '',
     playMinutes: memory.playMinutes(),
   });
   dbg('messages built', messages.length);
@@ -168,16 +177,21 @@ async function runTurn(input, myId, isAborted, onEvent) {
     messages.push({ role: 'user', content: transcript });
   }
 
+  // 观战模式：先把整段回答收完再决定说不说（模型可以回「不说」）
+  const bufferAll = !!input.watch;
+
   // 3. 流式回答 + 逐句合成
   let spoken = 0;
-  const queue = new SpeechQueue({
-    onAudio: (a) => {
-      if (spoken++ === 0) onEvent('first-audio', { ms: Date.now() - t });
-      onEvent('audio', { seq: a.seq, text: a.text, buffer: a.buffer });
-    },
-    onError: (err) => onEvent('warn', { message: `这句没念出来：${err.message}` }),
-    isAborted,
-  });
+  const makeQueue = () =>
+    new SpeechQueue({
+      onAudio: (a) => {
+        if (spoken++ === 0) onEvent('first-audio', { ms: Date.now() - t });
+        onEvent('audio', { seq: a.seq, text: a.text, buffer: a.buffer });
+      },
+      onError: (err) => onEvent('warn', { message: `这句没念出来：${err.message}` }),
+      isAborted,
+    });
+  const queue = bufferAll ? null : makeQueue();
 
   let pending = '';
   const t = Date.now();
@@ -188,6 +202,7 @@ async function runTurn(input, myId, isAborted, onEvent) {
       onFallback: () => onEvent('warn', { message: '主接口没通，正在用备用接口重试' }),
       onDelta: (delta) => {
         if (isAborted()) return;
+        if (bufferAll) return; // 观战：先收完再判断，不边收边念
         onEvent('delta', { text: delta });
         pending += delta;
         let m;
@@ -206,8 +221,21 @@ async function runTurn(input, myId, isAborted, onEvent) {
 
   full = (full || '').trim();
   dbg('llm done', full.length);
-  if (pending.trim()) queue.push(pending.trim());
-  await queue.close();
+
+  if (bufferAll) {
+    // 观战沉默判定：模型回了「不说」就什么都不干
+    if (isSilentReply(full)) {
+      dbg('watch silent');
+      onEvent('state', { state: 'idle' });
+      return { text: '', transcript: '', quiet: true };
+    }
+    const q = makeQueue();
+    for (const s of tts.splitSentences(full)) q.push(s);
+    await q.close();
+  } else {
+    if (pending.trim()) queue.push(pending.trim());
+    await queue.close();
+  }
   dbg('queue closed');
 
   if (full) memory.addTurn('assistant', full, game ? { game } : {});
